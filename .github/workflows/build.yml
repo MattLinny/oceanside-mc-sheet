@@ -1,0 +1,44 @@
+name: Build MC sheet
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check token
+        id: token
+        env:
+          PCO_APP_ID: ${{ secrets.PCO_APP_ID }}
+        run: if [ -n "$PCO_APP_ID" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "No Planning Center token yet, skipping."; fi
+      - name: Fetch plan and build page
+        if: steps.token.outputs.ok
+        env:
+          PCO_APP_ID: ${{ secrets.PCO_APP_ID }}
+          PCO_SECRET: ${{ secrets.PCO_SECRET }}
+        run: |
+          python3 fetch_pco.py input.json
+          python3 build_page.py input.json fragment.html
+          mkdir -p _site
+          python3 wrap.py fragment.html _site/index.html
+      - if: steps.token.outputs.ok
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - if: steps.token.outputs.ok
+        id: deploy
+        uses: actions/deploy-pages@v4
