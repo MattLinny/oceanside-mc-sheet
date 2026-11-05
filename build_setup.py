@@ -64,6 +64,14 @@ def lectern(name, positions, guests):
     if "Preaching" not in positions: return []
     return ["Pulpit" if name.lower() == "mark manfredi" or name in guests else "Silver table"]
 
+INPUTS = {"mic": "Mic", "handheld": "Handheld", "headset": "Headset", "lav": "Lav", "di": "DI", "di cable": "DI", "stereo di": "Stereo DI", "sgi to amp room": "SGI"}
+
+def inputs_for(name, positions, rules, role):
+    gear, notes = gear_for(name, positions, rules)
+    out = [INPUTS[g.lower()] for g in gear if g.lower() in INPUTS]
+    if any("has own di" in n.lower() for n in notes): out.append("DI")
+    return [(src, name, role) for src in dict.fromkeys(out)]
+
 def total_key(g):
     return "Wireless monitor" if g.endswith("wireless") else "Wired monitor" if g.endswith("wired") else g
 
@@ -95,25 +103,38 @@ def build(data, rules, tasks):
     rank = lambda pos: ORDER.index(pos) if pos in ORDER else len(ORDER)
     for ps in band.values(): ps.sort(key=rank)
     band_rows, totals = "", {}
+    inputs = []
     ordered = sorted(band.items(), key=lambda kv: min(rank(p) for p in kv[1]))
     mons = monitors(ordered)
     for name, ps in ordered:
         h, gear = row(name, ps, rules, stands(ps) + [mons[name]])
         band_rows += h
+        inputs += [(src, n, ps[0] if src == "Mic" else r) for src, n, r in inputs_for(name, ps, rules, ps[-1])]
+        if "Drums" in ps: inputs.append(("Kit", name, "Drums"))
         for g in gear:
             totals[total_key(g)] = totals.get(total_key(g), 0) + 1
     speakers = collect(people, SPEAKERS)
     guests = {p["name"].strip() for p in people if p.get("position") == "Preaching" and "elder" not in (p.get("team") or "").lower()}
     speak_rows = "".join(row(n, sorted(ps, key=SPEAKERS.index), rules, lectern(n, ps, guests))[0] for n, ps in speakers.items())
+    for n, ps in speakers.items():
+        inputs += inputs_for(n, sorted(ps, key=SPEAKERS.index), rules, " + ".join(LABEL.get(p, p) for p in sorted(ps, key=SPEAKERS.index)))
+    if any("crowd mic" in t.lower() for t in tasks): inputs.append(("Crowd mics", "", ""))
+    input_rows = "".join(f'<li class="irow"><span class="src">{E(a)}</span><span class="iwho">{E(b)}</span><span class="role">{E(c)}</span></li>' for a, b, c in inputs)
     task_rows = "".join(f'<li class="row" data-id="{E("task|" + t)}"><button type="button" class="tick" role="checkbox" aria-checked="false" aria-label="Check off {E(t)}"></button><div class="body"><span class="name task">{E(t)}</span></div></li>' for t in tasks)
     prod = collect(people, None, "production")
     prod_rows = "".join(f'<li class="prow"><span class="av">{E(initials(n))}</span><span class="name">{E(n)}</span><span class="role">{E(", ".join(ps))}</span></li>' for n, ps in prod.items())
     tot = "".join(f'<li><b>{c}</b><span>{E(g)}</span></li>' for g, c in sorted(totals.items(), key=lambda x: (-x[1], x[0])))
-    sec = lambda t, cls, rows: f'<section><h2>{t}</h2><ul class="card {cls}">{rows}</ul></section>' if rows else ""
-    return (HEAD + f'''<div class="bar"><div class="bar-in"><span class="bar-name">Stage Set-Up</span><span class="side"><span class="count"></span><button type="button" class="reset" hidden>Reset</button><button type="button" class="refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></span></div></div>
+    def sec(t, sid, cls, rows):
+        if not rows: return ""
+        navs.append(f'<a href="#{sid}">{t}</a>')
+        return f'<section id="{sid}"><h2><button type="button" class="fold" aria-expanded="true" aria-controls="{sid}-b"><span>{t}</span><span class="prog"></span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></h2><ul id="{sid}-b" class="card {cls}">{rows}</ul></section>'
+    navs = []
+    totals_s = sec("Totals", "totals", "tot", tot)
+    main_s = sec("Team", "team", "rows", band_rows) + sec("Speakers", "speakers", "rows", speak_rows)
+    aside_s = sec("Checklist", "checklist", "rows", task_rows) + sec("Inputs", "inputs", "ilist", input_rows) + sec("Production", "production", "prod", prod_rows)
+    return (HEAD + f'''<div class="bar"><div class="bar-in"><span class="bar-name">Stage Set-Up</span><span class="side"><span class="count"></span><button type="button" class="reset" hidden>Reset</button><button type="button" class="refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></span></div><nav class="nav" aria-label="Sections"><div class="nav-in">{"".join(navs)}</div></nav></div>
 <div class="page" data-plan="{E(plan["dates"])}"><header><div class="eyebrow">Updated {updated}</div><h1>{E(plan["dates"])}</h1></header>
-{sec("Gear totals", "tot", tot)}<div class="cols"><main>{sec("Worship team", "rows", band_rows)}{sec("Preacher &amp; host", "rows", speak_rows)}</main>
-<aside>{sec("Checklist", "rows", task_rows)}{sec("Production team", "prod", prod_rows)}</aside></div></div>''' + SCRIPT)
+{totals_s}<div class="cols"><main>{main_s}</main><aside>{aside_s}</aside></div></div>''' + SCRIPT)
 
 HEAD = '''<title>Stage Set-Up</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet"><style>
 :root{--bg:#f2f2f5;--card:#fff;--ink:#1c1c1f;--mute:#6e6e76;--line:#e6e6ea;--chip:#eef1f6;--chipink:#2f3b52;--acc:#2f6f5e}
@@ -133,15 +154,23 @@ ul{list-style:none;margin:0;padding:0}.card{background:var(--card);border-radius
 .tot{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr))}.tot li{display:flex;gap:9px;align-items:baseline;padding:11px 14px}.tot b{font-weight:600;font-size:1.125rem;font-variant-numeric:tabular-nums}
 .prow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.prow .name{font-size:1rem}.prow .role{margin-left:auto}.av{flex:none;width:30px;height:30px;border-radius:50%;background:var(--chip);color:var(--chipink);display:flex;align-items:center;justify-content:center;font-size:.6875rem;font-weight:500}
 .page{padding-bottom:40px}
-@media(min-width:56rem){.cols{display:grid;grid-template-columns:3fr 2fr;gap:24px;align-items:start}aside{position:sticky;top:64px}}
+@media(min-width:56rem){.cols{display:grid;grid-template-columns:3fr 2fr;gap:24px;align-items:start}}
+.nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav-in{max-width:68rem;margin:auto;padding:0 16px 8px;display:flex;gap:6px;width:max-content;min-width:100%;box-sizing:border-box}.nav a{color:var(--ink);text-decoration:none;background:var(--card);border-radius:999px;padding:7px 13px;font-size:.875rem;font-weight:500;white-space:nowrap}
+section{scroll-margin-top:104px}.fold{display:flex;align-items:center;gap:8px;width:100%;min-height:32px;color:var(--mute);font-weight:500;text-align:left}.prog{margin-left:auto;font-variant-numeric:tabular-nums}.chev{flex:none;transition:transform .15s}.fold[aria-expanded=false] .chev{transform:rotate(-90deg)}h2{margin:18px 4px 6px}
+.irow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.irow:first-child{border-top:0}.src{font-weight:500;flex:none;width:5.5rem}.iwho{min-width:0}.irow .role{margin-left:auto}
 </style>'''
 SCRIPT = '''<script>(function(){var P=document.querySelector(".page"),K="setup:"+P.dataset.plan,S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
 var R=[].slice.call(document.querySelectorAll(".row")),C=document.querySelector(".count"),X=document.querySelector(".reset");
 function chips(r){return [].slice.call(r.querySelectorAll(".g"))}
 function keys(r){var c=chips(r);return c.length?c.map(function(g){return r.dataset.id+"|"+g.dataset.g}):[r.dataset.id]}
-function U(){var n=0,t=0;R.forEach(function(r){var k=keys(r),d=k.filter(function(i){return S[i]}).length;n+=d;t+=k.length;var all=d===k.length;r.classList.toggle("done",all);r.querySelector(".tick").setAttribute("aria-checked",all);chips(r).forEach(function(g){g.setAttribute("aria-pressed",!!S[r.dataset.id+"|"+g.dataset.g])})});C.textContent=n+"/"+t;X.hidden=!n;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+function U(){var n=0,t=0;R.forEach(function(r){var k=keys(r),d=k.filter(function(i){return S[i]}).length;n+=d;t+=k.length;var all=d===k.length;r.classList.toggle("done",all);r.querySelector(".tick").setAttribute("aria-checked",all);chips(r).forEach(function(g){g.setAttribute("aria-pressed",!!S[r.dataset.id+"|"+g.dataset.g])})});C.textContent=n+"/"+t;[].forEach.call(document.querySelectorAll("section"),function(sc){var rs=[].slice.call(sc.querySelectorAll(".row"));if(!rs.length)return;var a=0,b=0;rs.forEach(function(r){var k=keys(r);b+=k.length;a+=k.filter(function(i){return S[i]}).length});sc.querySelector(".prog").textContent=a+"/"+b});X.hidden=!n;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 R.forEach(function(r){r.addEventListener("click",function(e){var g=e.target.closest(".g");if(g){var i=r.dataset.id+"|"+g.dataset.g;if(S[i])delete S[i];else S[i]=1;return U()}
 if(!e.target.closest(".tick")&&chips(r).length)return;var k=keys(r),all=k.every(function(i){return S[i]});k.forEach(function(i){if(all)delete S[i];else S[i]=1});U()})});
+var FK=K+":fold",F={};try{F=JSON.parse(localStorage.getItem(FK))||{}}catch(e){}
+var SEC=[].slice.call(document.querySelectorAll("section"));
+function setF(sc,closed){var b=sc.querySelector(".fold");b.setAttribute("aria-expanded",!closed);sc.querySelector(".card").hidden=closed;if(closed)F[sc.id]=1;else delete F[sc.id];try{localStorage.setItem(FK,JSON.stringify(F))}catch(e){}}
+SEC.forEach(function(sc){if(F[sc.id])setF(sc,true);sc.querySelector(".fold").addEventListener("click",function(){setF(sc,!F[sc.id])})});
+[].forEach.call(document.querySelectorAll(".nav a"),function(a){a.addEventListener("click",function(){setF(document.querySelector(a.getAttribute("href")),false)})});
 X.addEventListener("click",function(){S={};U()});document.querySelector(".refresh").addEventListener("click",function(){location.reload()});U()})();</script>'''
 
 if __name__ == "__main__":
