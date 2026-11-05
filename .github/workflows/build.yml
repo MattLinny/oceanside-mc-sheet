@@ -31,13 +31,15 @@ jobs:
           PCO_APP_ID: ${{ secrets.PCO_APP_ID }}
           PCO_SECRET: ${{ secrets.PCO_SECRET }}
           GEAR_SHEET_ID: ${{ vars.GEAR_SHEET_ID }}
+          PATCH_SHEET_ID: ${{ vars.PATCH_SHEET_ID }}
         run: |
           python3 fetch_pco.py input.json
           python3 build_page.py input.json fragment.html
           mkdir -p _site
           python3 wrap.py fragment.html _site/index.html
           curl -fsSL "https://docs.google.com/spreadsheets/d/${GEAR_SHEET_ID}/export?format=csv" -o gear_live.csv && grep -q '^Who,' gear_live.csv || cp gear.csv gear_live.csv
-          python3 build_setup.py input.json gear_live.csv setup.html
+          curl -fsSL "https://docs.google.com/spreadsheets/d/${PATCH_SHEET_ID}/export?format=csv" -o patch_live.csv && grep -q '^Box,' patch_live.csv || cp patch.csv patch_live.csv
+          python3 build_setup.py input.json gear_live.csv setup.html patch_live.csv
           mkdir -p _site/setup
           python3 wrap.py setup.html _site/setup/index.html
       - if: steps.token.outputs.ok

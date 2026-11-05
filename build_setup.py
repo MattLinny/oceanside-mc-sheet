@@ -107,7 +107,7 @@ def build(data, rules, tasks):
     guests = {p["name"].strip() for p in people if p.get("position") == "Preaching" and "elder" not in (p.get("team") or "").lower()}
     speak_rows = "".join(row(n, sorted(ps, key=SPEAKERS.index), rules, lectern(n, ps, guests))[0] for n, ps in speakers.items())
     input_rows, box = "", None
-    for r in csv.DictReader(open(PATCH, newline="", encoding="utf-8-sig")):
+    for r in csv.DictReader(open(sys.argv[4] if len(sys.argv) > 4 else PATCH, newline="", encoding="utf-8-sig")):
         if r["Box"] != box:
             box = r["Box"]
             input_rows += f'<li class="irow ihead"><span class="src">Box</span><span class="sub">Sub</span><span class="iwho">Input</span></li>' if box == "Inputs" else f'<li class="ihead">{E(box)}</li>'
