@@ -3,3 +3,5 @@ fragment.html
 _site/
 __pycache__/
 sample_input.json
+gear_live.csv
+setup.html
