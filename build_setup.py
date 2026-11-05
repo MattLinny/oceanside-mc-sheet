@@ -29,6 +29,8 @@ def gear_for(name, positions, rules):
             drop = {x.lower() for x in r["remove"]}
             gear = [g for g in gear if g.lower() not in drop] + r["gear"]
             notes += r["notes"]
+    if "MC" in positions:  # the host always gets a handheld, whatever a person rule removes
+        gear.insert(0, "Handheld")
     return list(dict.fromkeys(gear)), list(dict.fromkeys(notes))
 
 def row(name, positions, rules):
