@@ -13,6 +13,7 @@ Inputs,16,,EG 1 L
 Inputs,17,,EG 1 R
 Inputs,18,,EG 2 L
 Inputs,19,,EG 2 R
+Inputs,20,S5,Strings
 Inputs,23,,Keys L
 Inputs,24,,Keys R
 Inputs,31,S6,Vox 1
@@ -20,10 +21,9 @@ Inputs,32,S7,Vox 2
 Inputs,33,S8,Vox 3
 Inputs,34,S9,Vox 4
 Inputs,35,S10,Vox 5
-Inputs,36,,Vox 6
-Inputs,,S1,Crowd
-Inputs,,S2,Crowd
-Inputs,,S5,Strings
-Inputs,,S14,Talkback
+Inputs,36,S11,Vox 6
+Inputs,42,S14,Talkback
+Inputs,47,S1,Crowd
+Inputs,48,S2,Crowd
 Sub snake outs,A,,Mains L
 Sub snake outs,B,,Mains R
