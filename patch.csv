@@ -1,36 +1,29 @@
-Box,No,Input
-Stage box,1,Kick
-Stage box,2,Snare top
-Stage box,3,Snare bottom
-Stage box,7,Rack
-Stage box,8,Floor
-Stage box,9,OH L
-Stage box,10,OH R
-Stage box,12,Bass
-Stage box,14,Acoustic 1
-Stage box,15,Acoustic 2
-Stage box,16,EG 1 L
-Stage box,17,EG 1 R
-Stage box,18,EG 2 L
-Stage box,19,EG 2 R
-Stage box,23,Keys L
-Stage box,24,Keys R
-Stage box,31,Vox 1
-Stage box,32,Vox 2
-Stage box,33,Vox 3
-Stage box,34,Vox 4
-Stage box,35,Vox 5
-Stage box,36,Vox 6
-Sub snake,S1,Crowd
-Sub snake,S2,Crowd
-Sub snake,S3,Acoustic 1
-Sub snake,S4,Acoustic 2
-Sub snake,S5,Strings
-Sub snake,S6,Vox 1
-Sub snake,S7,Vox 2
-Sub snake,S8,Vox 3
-Sub snake,S9,Vox 4
-Sub snake,S10,Vox 5
-Sub snake,S14,Talkback
-Sub snake outs,A,Mains L
-Sub snake outs,B,Mains R
+Box,No,Sub,Input
+Inputs,1,,Kick
+Inputs,2,,Snare top
+Inputs,3,,Snare bottom
+Inputs,7,,Rack
+Inputs,8,,Floor
+Inputs,9,,OH L
+Inputs,10,,OH R
+Inputs,12,,Bass
+Inputs,14,S3,Acoustic 1
+Inputs,15,S4,Acoustic 2
+Inputs,16,,EG 1 L
+Inputs,17,,EG 1 R
+Inputs,18,,EG 2 L
+Inputs,19,,EG 2 R
+Inputs,23,,Keys L
+Inputs,24,,Keys R
+Inputs,31,S6,Vox 1
+Inputs,32,S7,Vox 2
+Inputs,33,S8,Vox 3
+Inputs,34,S9,Vox 4
+Inputs,35,S10,Vox 5
+Inputs,36,,Vox 6
+Inputs,,S1,Crowd
+Inputs,,S2,Crowd
+Inputs,,S5,Strings
+Inputs,,S14,Talkback
+Sub snake outs,A,,Mains L
+Sub snake outs,B,,Mains R

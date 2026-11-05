@@ -110,8 +110,8 @@ def build(data, rules, tasks):
     for r in csv.DictReader(open(PATCH, newline="", encoding="utf-8-sig")):
         if r["Box"] != box:
             box = r["Box"]
-            input_rows += f'<li class="ihead">{E(box)}</li>'
-        input_rows += f'<li class="irow"><span class="src">{E(r["No"])}</span><span class="iwho">{E(r["Input"])}</span></li>'
+            input_rows += f'<li class="irow ihead"><span class="src">Box</span><span class="sub">Sub</span><span class="iwho">Input</span></li>' if box == "Inputs" else f'<li class="ihead">{E(box)}</li>'
+        input_rows += f'<li class="irow"><span class="src">{E(r["No"])}</span><span class="sub">{E(r["Sub"])}</span><span class="iwho">{E(r["Input"])}</span></li>'
     task_rows = "".join(f'<li class="row" data-id="{E("task|" + t)}"><button type="button" class="tick" role="checkbox" aria-checked="false" aria-label="Check off {E(t)}"></button><div class="body"><span class="name task">{E(t)}</span></div></li>' for t in tasks)
     prod = collect(people, None, "production")
     prod_rows = "".join(f'<li class="prow"><span class="av">{E(initials(n))}</span><span class="name">{E(n)}</span><span class="role">{E(", ".join(ps))}</span></li>' for n, ps in prod.items())
@@ -149,7 +149,7 @@ ul{list-style:none;margin:0;padding:0}.card{background:var(--card);border-radius
 @media(min-width:56rem){.cols{display:grid;grid-template-columns:3fr 2fr;gap:24px;align-items:start}}
 .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav-in{max-width:68rem;margin:auto;padding:0 16px 8px;display:flex;gap:6px;width:max-content;min-width:100%;box-sizing:border-box}.nav a{color:var(--ink);text-decoration:none;background:var(--card);border-radius:999px;padding:7px 13px;font-size:.875rem;font-weight:500;white-space:nowrap}
 section{scroll-margin-top:104px}.fold{display:flex;align-items:center;gap:8px;width:100%;min-height:32px;color:var(--mute);font-weight:500;text-align:left}.prog{margin-left:auto;font-variant-numeric:tabular-nums}.chev{flex:none;transition:transform .15s}.fold[aria-expanded=false] .chev{transform:rotate(-90deg)}h2{margin:18px 4px 6px}
-.irow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.irow:first-child{border-top:0}.src{font-weight:600;flex:none;width:2.5rem;font-variant-numeric:tabular-nums}.ihead{padding:12px 14px 6px;color:var(--mute);font-size:.8125rem;font-weight:500;border-top:1px solid var(--line)}.ihead:first-child{border-top:0}.ihead+.irow{border-top:0}.iwho{min-width:0}.irow .role{margin-left:auto}
+.irow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.irow:first-child{border-top:0}.src{font-weight:600;flex:none;width:2.5rem;font-variant-numeric:tabular-nums}.sub{flex:none;width:2.5rem;color:var(--acc);font-weight:600;font-variant-numeric:tabular-nums}.ihead span{color:inherit;font-weight:500}.ihead{padding:12px 14px 6px;color:var(--mute);font-size:.8125rem;font-weight:500;border-top:1px solid var(--line)}.ihead:first-child{border-top:0}.ihead+.irow{border-top:0}.iwho{min-width:0}.irow .role{margin-left:auto}
 </style>'''
 SCRIPT = '''<script>(function(){var P=document.querySelector(".page"),K="setup:"+P.dataset.plan,S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
 var R=[].slice.call(document.querySelectorAll(".row")),C=document.querySelector(".count"),X=document.querySelector(".reset");
