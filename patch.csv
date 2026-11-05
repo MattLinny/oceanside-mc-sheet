@@ -15,6 +15,12 @@ Stage box,18,EG 2 L
 Stage box,19,EG 2 R
 Stage box,23,Keys L
 Stage box,24,Keys R
+Stage box,31,Vox 1
+Stage box,32,Vox 2
+Stage box,33,Vox 3
+Stage box,34,Vox 4
+Stage box,35,Vox 5
+Stage box,36,Vox 6
 Sub snake,S1,Crowd
 Sub snake,S2,Crowd
 Sub snake,S3,Acoustic 1
