@@ -5,6 +5,8 @@ from zoneinfo import ZoneInfo
 
 E = lambda s: html.escape(str(s).strip(), quote=True)
 ORDER = ["Worship Leader", "Vocals", "Keys", "Acoustic Guitar", "Electric Guitar", "Bass", "Drums", "Strings"]
+VOCAL = {"Worship Leader", "Vocals"}
+WIRELESS = 6
 SPEAKERS = ["Preaching", "MC"]
 LABEL = {"Preaching": "Preacher", "MC": "Host"}
 split = lambda s: [x.strip() for x in (s or "").split(";") if x.strip()]
@@ -37,8 +39,28 @@ def gear_for(name, positions, rules):
         gear.insert(0, "Handheld")
     return list(dict.fromkeys(gear)), list(dict.fromkeys(notes))
 
-def row(name, positions, rules):
+def monitors(band):
+    """band is in stage order, vocalists first. Mon 1-6 wireless, drums always wired on 7; bass moves to wired 8 if wireless runs out."""
+    out = {n: "Mon 7 wired" for n, ps in band if "Drums" in ps}
+    rest = [n for n, _ in band if n not in out]
+    if len(rest) > WIRELESS:
+        bass = next((n for n, ps in band if n in rest and "Bass" in ps), None)
+        if bass:
+            out[bass] = "Mon 8 wired"
+            rest.remove(bass)
+    for i, n in enumerate(rest):
+        out[n] = f"Mon {i + 1} wireless" if i < WIRELESS else "No monitor"
+    return out
+
+def stand(positions):
+    return "iPad stand" if VOCAL & set(positions) else "Music stand"
+
+def total_key(g):
+    return "Wireless monitor" if g.endswith("wireless") else "Wired monitor" if g.endswith("wired") else g
+
+def row(name, positions, rules, extra=()):
     gear, notes = gear_for(name, positions, rules)
+    gear = gear + list(extra)
     role = " + ".join(LABEL.get(p, p) for p in positions)
     chips = "".join(f'<button type="button" class="g" data-g="{E(g)}" aria-pressed="false">{E(g)}</button>' for g in gear)
     note = "".join(f'<div class="n">{E(n)}</div>' for n in notes)
@@ -64,10 +86,13 @@ def build(data, rules, tasks):
     rank = lambda pos: ORDER.index(pos) if pos in ORDER else len(ORDER)
     for ps in band.values(): ps.sort(key=rank)
     band_rows, totals = "", {}
-    for name, ps in sorted(band.items(), key=lambda kv: min(rank(p) for p in kv[1])):
-        h, gear = row(name, ps, rules)
+    ordered = sorted(band.items(), key=lambda kv: min(rank(p) for p in kv[1]))
+    mons = monitors(ordered)
+    for name, ps in ordered:
+        h, gear = row(name, ps, rules, [stand(ps), mons[name]])
         band_rows += h
-        for g in gear: totals[g] = totals.get(g, 0) + 1
+        for g in gear:
+            if g != "No monitor": totals[total_key(g)] = totals.get(total_key(g), 0) + 1
     speakers = collect(people, SPEAKERS, "elder")
     speak_rows = "".join(row(n, sorted(ps, key=SPEAKERS.index), rules)[0] for n, ps in speakers.items())
     task_rows = "".join(f'<li class="row" data-id="{E("task|" + t)}"><button type="button" class="tick" role="checkbox" aria-checked="false" aria-label="Check off {E(t)}"></button><div class="body"><span class="name task">{E(t)}</span></div></li>' for t in tasks)
