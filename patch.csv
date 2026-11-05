@@ -1,0 +1,30 @@
+Box,No,Input
+Stage box,1,Kick
+Stage box,2,Snare top
+Stage box,3,Snare bottom
+Stage box,7,Rack
+Stage box,8,Floor
+Stage box,9,OH L
+Stage box,10,OH R
+Stage box,12,Bass
+Stage box,14,Acoustic 1
+Stage box,15,Acoustic 2
+Stage box,16,EG 1 L
+Stage box,17,EG 1 R
+Stage box,18,EG 2 L
+Stage box,19,EG 2 R
+Stage box,23,Keys L
+Stage box,24,Keys R
+Sub snake,S1,Crowd
+Sub snake,S2,Crowd
+Sub snake,S3,Acoustic 1
+Sub snake,S4,Acoustic 2
+Sub snake,S5,Strings
+Sub snake,S6,Vox 1
+Sub snake,S7,Vox 2
+Sub snake,S8,Vox 3
+Sub snake,S9,Vox 4
+Sub snake,S10,Vox 5
+Sub snake,S14,Talkback
+Sub snake outs,A,Mains L
+Sub snake outs,B,Mains R

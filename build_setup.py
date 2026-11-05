@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build the stage set-up page. Usage: build_setup.py input.json gear.csv out.html"""
-import csv, datetime as dt, html, json, sys
+import csv, datetime as dt, html, json, os, sys
 from zoneinfo import ZoneInfo
 
 E = lambda s: html.escape(str(s).strip(), quote=True)
@@ -8,6 +8,7 @@ ORDER = ["Worship Leader", "Vocals", "Keys", "Acoustic Guitar", "Electric Guitar
 VOCAL = {"Worship Leader", "Vocals"}
 GUITARS = {"Acoustic Guitar", "Electric Guitar", "Bass"}
 WIRELESS = 6
+PATCH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "patch.csv")
 SPEAKERS = ["Preaching", "MC"]
 LABEL = {"Preaching": "Preacher", "MC": "Host"}
 split = lambda s: [x.strip() for x in (s or "").split(";") if x.strip()]
@@ -64,14 +65,6 @@ def lectern(name, positions, guests):
     if "Preaching" not in positions: return []
     return ["Pulpit" if name.lower() == "mark manfredi" or name in guests else "Silver table"]
 
-INPUTS = {"mic": "Mic", "handheld": "Handheld", "headset": "Headset", "lav": "Lav", "di": "DI", "di cable": "DI", "stereo di": "Stereo DI", "sgi to amp room": "SGI"}
-
-def inputs_for(name, positions, rules, role):
-    gear, notes = gear_for(name, positions, rules)
-    out = [INPUTS[g.lower()] for g in gear if g.lower() in INPUTS]
-    if any("has own di" in n.lower() for n in notes): out.append("DI")
-    return [(src, name, role) for src in dict.fromkeys(out)]
-
 def total_key(g):
     return "Wireless monitor" if g.endswith("wireless") else "Wired monitor" if g.endswith("wired") else g
 
@@ -103,23 +96,22 @@ def build(data, rules, tasks):
     rank = lambda pos: ORDER.index(pos) if pos in ORDER else len(ORDER)
     for ps in band.values(): ps.sort(key=rank)
     band_rows, totals = "", {}
-    inputs = []
     ordered = sorted(band.items(), key=lambda kv: min(rank(p) for p in kv[1]))
     mons = monitors(ordered)
     for name, ps in ordered:
         h, gear = row(name, ps, rules, stands(ps) + [mons[name]])
         band_rows += h
-        inputs += [(src, n, ps[0] if src == "Mic" else r) for src, n, r in inputs_for(name, ps, rules, ps[-1])]
-        if "Drums" in ps: inputs.append(("Kit", name, "Drums"))
         for g in gear:
             totals[total_key(g)] = totals.get(total_key(g), 0) + 1
     speakers = collect(people, SPEAKERS)
     guests = {p["name"].strip() for p in people if p.get("position") == "Preaching" and "elder" not in (p.get("team") or "").lower()}
     speak_rows = "".join(row(n, sorted(ps, key=SPEAKERS.index), rules, lectern(n, ps, guests))[0] for n, ps in speakers.items())
-    for n, ps in speakers.items():
-        inputs += inputs_for(n, sorted(ps, key=SPEAKERS.index), rules, " + ".join(LABEL.get(p, p) for p in sorted(ps, key=SPEAKERS.index)))
-    if any("crowd mic" in t.lower() for t in tasks): inputs.append(("Crowd mics", "", ""))
-    input_rows = "".join(f'<li class="irow"><span class="src">{E(a)}</span><span class="iwho">{E(b)}</span><span class="role">{E(c)}</span></li>' for a, b, c in inputs)
+    input_rows, box = "", None
+    for r in csv.DictReader(open(PATCH, newline="", encoding="utf-8-sig")):
+        if r["Box"] != box:
+            box = r["Box"]
+            input_rows += f'<li class="ihead">{E(box)}</li>'
+        input_rows += f'<li class="irow"><span class="src">{E(r["No"])}</span><span class="iwho">{E(r["Input"])}</span></li>'
     task_rows = "".join(f'<li class="row" data-id="{E("task|" + t)}"><button type="button" class="tick" role="checkbox" aria-checked="false" aria-label="Check off {E(t)}"></button><div class="body"><span class="name task">{E(t)}</span></div></li>' for t in tasks)
     prod = collect(people, None, "production")
     prod_rows = "".join(f'<li class="prow"><span class="av">{E(initials(n))}</span><span class="name">{E(n)}</span><span class="role">{E(", ".join(ps))}</span></li>' for n, ps in prod.items())
@@ -157,7 +149,7 @@ ul{list-style:none;margin:0;padding:0}.card{background:var(--card);border-radius
 @media(min-width:56rem){.cols{display:grid;grid-template-columns:3fr 2fr;gap:24px;align-items:start}}
 .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav-in{max-width:68rem;margin:auto;padding:0 16px 8px;display:flex;gap:6px;width:max-content;min-width:100%;box-sizing:border-box}.nav a{color:var(--ink);text-decoration:none;background:var(--card);border-radius:999px;padding:7px 13px;font-size:.875rem;font-weight:500;white-space:nowrap}
 section{scroll-margin-top:104px}.fold{display:flex;align-items:center;gap:8px;width:100%;min-height:32px;color:var(--mute);font-weight:500;text-align:left}.prog{margin-left:auto;font-variant-numeric:tabular-nums}.chev{flex:none;transition:transform .15s}.fold[aria-expanded=false] .chev{transform:rotate(-90deg)}h2{margin:18px 4px 6px}
-.irow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.irow:first-child{border-top:0}.src{font-weight:500;flex:none;width:5.5rem}.iwho{min-width:0}.irow .role{margin-left:auto}
+.irow{display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.irow:first-child{border-top:0}.src{font-weight:600;flex:none;width:2.5rem;font-variant-numeric:tabular-nums}.ihead{padding:12px 14px 6px;color:var(--mute);font-size:.8125rem;font-weight:500;border-top:1px solid var(--line)}.ihead:first-child{border-top:0}.ihead+.irow{border-top:0}.iwho{min-width:0}.irow .role{margin-left:auto}
 </style>'''
 SCRIPT = '''<script>(function(){var P=document.querySelector(".page"),K="setup:"+P.dataset.plan,S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
 var R=[].slice.call(document.querySelectorAll(".row")),C=document.querySelector(".count"),X=document.querySelector(".reset");
