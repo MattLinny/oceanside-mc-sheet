@@ -70,8 +70,8 @@ def build(data, rules):
     sec = lambda t, cls, rows: f'<section><h2>{t}</h2><ul class="card {cls}">{rows}</ul></section>' if rows else ""
     return (HEAD + f'''<div class="bar"><div class="bar-in"><span class="bar-name">Stage Set-Up</span><span class="side"><span class="count"></span><button type="button" class="reset" hidden>Reset</button><button type="button" class="refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></span></div></div>
 <div class="page" data-plan="{E(plan["dates"])}"><header><div class="eyebrow">Updated {updated}</div><h1>{E(plan["dates"])}</h1></header>
-<div class="cols"><main>{sec("Worship team", "rows", band_rows)}{sec("Preacher &amp; host", "rows", speak_rows)}</main>
-<aside>{sec("Gear totals", "tot", tot)}{sec("Production team", "prod", prod_rows)}</aside></div></div>''' + SCRIPT)
+{sec("Gear totals", "tot", tot)}<div class="cols"><main>{sec("Worship team", "rows", band_rows)}{sec("Preacher &amp; host", "rows", speak_rows)}</main>
+<aside>{sec("Production team", "prod", prod_rows)}</aside></div></div>''' + SCRIPT)
 
 HEAD = '''<title>Stage Set-Up</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet"><style>
 :root{--bg:#f2f2f5;--card:#fff;--ink:#1c1c1f;--mute:#6e6e76;--line:#e6e6ea;--chip:#eef1f6;--chipink:#2f3b52;--acc:#2f6f5e}
@@ -86,11 +86,11 @@ h2{font-size:.8125rem;font-weight:500;color:var(--mute);margin:22px 4px 8px}
 ul{list-style:none;margin:0;padding:0}.card{background:var(--card);border-radius:14px;overflow:hidden}
 .row{display:flex;gap:12px;padding:14px;border-top:1px solid var(--line);transition:opacity .25s;cursor:pointer}.row:first-child,.prow:first-child{border-top:0}.row.done{opacity:.4}
 .tick{flex:none;width:24px;height:24px;border-radius:50%;border:1.5px solid #c4c4cc;margin-top:1px}.done .tick{background:var(--acc);border-color:var(--acc);box-shadow:inset 0 0 0 4px var(--card)}
-.body{min-width:0;flex:1}.head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.name{font-weight:500;font-size:1.0625rem}.role{color:var(--mute);font-size:.875rem;text-align:right}
+.body{min-width:0;flex:1}.head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.name{font-weight:500;font-size:1.0625rem;white-space:nowrap}.role{color:var(--mute);font-size:.875rem;text-align:right}
 .gs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.g{background:var(--chip);color:var(--chipink);border-radius:8px;padding:4px 9px;font-size:.9375rem}.n{color:var(--mute);font-size:.9375rem;margin-top:7px}
-.tot{display:grid;grid-template-columns:1fr 1fr}.tot li{display:flex;gap:9px;align-items:baseline;padding:11px 14px}.tot b{font-weight:600;font-size:1.125rem;font-variant-numeric:tabular-nums}
+.tot{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr))}.tot li{display:flex;gap:9px;align-items:baseline;padding:11px 14px}.tot b{font-weight:600;font-size:1.125rem;font-variant-numeric:tabular-nums}
 .prow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.prow .name{font-size:1rem}.prow .role{margin-left:auto}.av{flex:none;width:30px;height:30px;border-radius:50%;background:var(--chip);color:var(--chipink);display:flex;align-items:center;justify-content:center;font-size:.6875rem;font-weight:500}
-.page{padding-bottom:40px}aside section:first-child h2,main section:first-child h2{margin-top:14px}
+.page{padding-bottom:40px}
 @media(min-width:56rem){.cols{display:grid;grid-template-columns:3fr 2fr;gap:24px;align-items:start}aside{position:sticky;top:64px}}
 </style>'''
 SCRIPT = '''<script>(function(){var P=document.querySelector(".page"),K="setup:"+P.dataset.plan,S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
