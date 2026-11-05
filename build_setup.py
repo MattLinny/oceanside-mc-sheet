@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 E = lambda s: html.escape(str(s).strip(), quote=True)
 ORDER = ["Worship Leader", "Vocals", "Keys", "Acoustic Guitar", "Electric Guitar", "Bass", "Drums", "Strings"]
 VOCAL = {"Worship Leader", "Vocals"}
+GUITARS = {"Acoustic Guitar", "Electric Guitar"}
 WIRELESS = 6
 SPEAKERS = ["Preaching", "MC"]
 LABEL = {"Preaching": "Preacher", "MC": "Host"}
@@ -43,17 +44,25 @@ def monitors(band):
     """band is in stage order, vocalists first. Mon 1-6 wireless, drums always wired on 7; bass moves to wired 8 if wireless runs out."""
     out = {n: "Mon 7 wired" for n, ps in band if "Drums" in ps}
     rest = [n for n, _ in band if n not in out]
+    wired = 8
     if len(rest) > WIRELESS:
         bass = next((n for n, ps in band if n in rest and "Bass" in ps), None)
         if bass:
             out[bass] = "Mon 8 wired"
             rest.remove(bass)
+            wired = 9
     for i, n in enumerate(rest):
-        out[n] = f"Mon {i + 1} wireless" if i < WIRELESS else "No monitor"
+        out[n] = f"Mon {i + 1} wireless" if i < WIRELESS else f"Mon {wired + i - WIRELESS} wired"
     return out
 
-def stand(positions):
-    return "iPad stand" if VOCAL & set(positions) else "Music stand"
+def stands(positions):
+    out = ["iPad stand" if VOCAL & set(positions) else "Music stand"]
+    if GUITARS & set(positions): out.append("Guitar stand")
+    return out
+
+def lectern(name, positions, guests):
+    if "Preaching" not in positions: return []
+    return ["Pulpit" if name.lower() == "mark manfredi" or name in guests else "Silver table"]
 
 def total_key(g):
     return "Wireless monitor" if g.endswith("wireless") else "Wired monitor" if g.endswith("wired") else g
@@ -89,12 +98,13 @@ def build(data, rules, tasks):
     ordered = sorted(band.items(), key=lambda kv: min(rank(p) for p in kv[1]))
     mons = monitors(ordered)
     for name, ps in ordered:
-        h, gear = row(name, ps, rules, [stand(ps), mons[name]])
+        h, gear = row(name, ps, rules, stands(ps) + [mons[name]])
         band_rows += h
         for g in gear:
-            if g != "No monitor": totals[total_key(g)] = totals.get(total_key(g), 0) + 1
-    speakers = collect(people, SPEAKERS, "elder")
-    speak_rows = "".join(row(n, sorted(ps, key=SPEAKERS.index), rules)[0] for n, ps in speakers.items())
+            totals[total_key(g)] = totals.get(total_key(g), 0) + 1
+    speakers = collect(people, SPEAKERS)
+    guests = {p["name"].strip() for p in people if p.get("position") == "Preaching" and "elder" not in (p.get("team") or "").lower()}
+    speak_rows = "".join(row(n, sorted(ps, key=SPEAKERS.index), rules, lectern(n, ps, guests))[0] for n, ps in speakers.items())
     task_rows = "".join(f'<li class="row" data-id="{E("task|" + t)}"><button type="button" class="tick" role="checkbox" aria-checked="false" aria-label="Check off {E(t)}"></button><div class="body"><span class="name task">{E(t)}</span></div></li>' for t in tasks)
     prod = collect(people, None, "production")
     prod_rows = "".join(f'<li class="prow"><span class="av">{E(initials(n))}</span><span class="name">{E(n)}</span><span class="role">{E(", ".join(ps))}</span></li>' for n, ps in prod.items())
