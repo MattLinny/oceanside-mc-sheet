@@ -16,6 +16,10 @@ def load_rules(path):
     rows = list(csv.DictReader(open(path, newline="", encoding="utf-8-sig")))
     return {(r.get("Who") or "").strip().lower(): {"gear": split(r.get("Gear")), "notes": split(r.get("Notes")), "remove": split(r.get("Remove"))} for r in rows if (r.get("Who") or "").strip()}
 
+def load_tasks(path):
+    rows = csv.DictReader(open(path, newline="", encoding="utf-8-sig"))
+    return [r["Gear"].strip() for r in rows if (r.get("Who") or "").strip().lower() == "task" and (r.get("Gear") or "").strip()]
+
 def gear_for(name, positions, rules):
     gear, notes = [], []
     for pos in positions:
@@ -36,7 +40,7 @@ def gear_for(name, positions, rules):
 def row(name, positions, rules):
     gear, notes = gear_for(name, positions, rules)
     role = " + ".join(LABEL.get(p, p) for p in positions)
-    chips = "".join(f'<span class="g">{E(g)}</span>' for g in gear)
+    chips = "".join(f'<button type="button" class="g" data-g="{E(g)}" aria-pressed="false">{E(g)}</button>' for g in gear)
     note = "".join(f'<div class="n">{E(n)}</div>' for n in notes)
     body = (f'<div class="gs">{chips}</div>' if chips else "") + note
     rid = E(name + "|" + role)
@@ -53,7 +57,7 @@ def collect(people, wanted, team=None):
         if pos not in m[p["name"].strip()]: m[p["name"].strip()].append(pos)
     return m
 
-def build(data, rules):
+def build(data, rules, tasks):
     plan, people = data["plan"], data["people"]
     updated = dt.datetime.now(ZoneInfo("America/Vancouver")).strftime("%a %-I:%M%p").replace("AM", "am").replace("PM", "pm")
     band = collect(people, None, "worship")
@@ -66,6 +70,7 @@ def build(data, rules):
         for g in gear: totals[g] = totals.get(g, 0) + 1
     speakers = collect(people, SPEAKERS, "elder")
     speak_rows = "".join(row(n, sorted(ps, key=SPEAKERS.index), rules)[0] for n, ps in speakers.items())
+    task_rows = "".join(f'<li class="row" data-id="{E("task|" + t)}"><button type="button" class="tick" role="checkbox" aria-checked="false" aria-label="Check off {E(t)}"></button><div class="body"><span class="name task">{E(t)}</span></div></li>' for t in tasks)
     prod = collect(people, None, "production")
     prod_rows = "".join(f'<li class="prow"><span class="av">{E(initials(n))}</span><span class="name">{E(n)}</span><span class="role">{E(", ".join(ps))}</span></li>' for n, ps in prod.items())
     tot = "".join(f'<li><b>{c}</b><span>{E(g)}</span></li>' for g, c in sorted(totals.items(), key=lambda x: (-x[1], x[0])))
@@ -73,7 +78,7 @@ def build(data, rules):
     return (HEAD + f'''<div class="bar"><div class="bar-in"><span class="bar-name">Stage Set-Up</span><span class="side"><span class="count"></span><button type="button" class="reset" hidden>Reset</button><button type="button" class="refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></span></div></div>
 <div class="page" data-plan="{E(plan["dates"])}"><header><div class="eyebrow">Updated {updated}</div><h1>{E(plan["dates"])}</h1></header>
 {sec("Gear totals", "tot", tot)}<div class="cols"><main>{sec("Worship team", "rows", band_rows)}{sec("Preacher &amp; host", "rows", speak_rows)}</main>
-<aside>{sec("Production team", "prod", prod_rows)}</aside></div></div>''' + SCRIPT)
+<aside>{sec("Checklist", "rows", task_rows)}{sec("Production team", "prod", prod_rows)}</aside></div></div>''' + SCRIPT)
 
 HEAD = '''<title>Stage Set-Up</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet"><style>
 :root{--bg:#f2f2f5;--card:#fff;--ink:#1c1c1f;--mute:#6e6e76;--line:#e6e6ea;--chip:#eef1f6;--chipink:#2f3b52;--acc:#2f6f5e}
@@ -89,7 +94,7 @@ ul{list-style:none;margin:0;padding:0}.card{background:var(--card);border-radius
 .row{display:flex;gap:12px;padding:14px;border-top:1px solid var(--line);transition:opacity .25s;cursor:pointer}.row:first-child,.prow:first-child{border-top:0}.row.done{opacity:.4}
 .tick{flex:none;width:24px;height:24px;border-radius:50%;border:1.5px solid #c4c4cc;margin-top:1px}.done .tick{background:var(--acc);border-color:var(--acc);box-shadow:inset 0 0 0 4px var(--card)}
 .body{min-width:0;flex:1}.head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.name{font-weight:500;font-size:1.0625rem;white-space:nowrap}.role{color:var(--mute);font-size:.875rem;text-align:right}
-.gs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.g{background:var(--chip);color:var(--chipink);border-radius:8px;padding:4px 9px;font-size:.9375rem}.n{color:var(--mute);font-size:.9375rem;margin-top:7px}
+.gs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.g{background:var(--chip);color:var(--chipink);border-radius:8px;padding:7px 11px;font-size:.9375rem;transition:background .15s}.g[aria-pressed=true]{background:var(--acc);color:var(--card)}.g[aria-pressed=true]::before{content:"\\2713\\00a0"}.name.task{white-space:normal;display:block;margin-top:1px}.n{color:var(--mute);font-size:.9375rem;margin-top:7px}
 .tot{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr))}.tot li{display:flex;gap:9px;align-items:baseline;padding:11px 14px}.tot b{font-weight:600;font-size:1.125rem;font-variant-numeric:tabular-nums}
 .prow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.prow .name{font-size:1rem}.prow .role{margin-left:auto}.av{flex:none;width:30px;height:30px;border-radius:50%;background:var(--chip);color:var(--chipink);display:flex;align-items:center;justify-content:center;font-size:.6875rem;font-weight:500}
 .page{padding-bottom:40px}
@@ -97,9 +102,12 @@ ul{list-style:none;margin:0;padding:0}.card{background:var(--card);border-radius
 </style>'''
 SCRIPT = '''<script>(function(){var P=document.querySelector(".page"),K="setup:"+P.dataset.plan,S={};try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
 var R=[].slice.call(document.querySelectorAll(".row")),C=document.querySelector(".count"),X=document.querySelector(".reset");
-function U(){var n=0;R.forEach(function(r){var d=!!S[r.dataset.id];n+=d;r.classList.toggle("done",d);r.querySelector(".tick").setAttribute("aria-checked",d)});C.textContent=n+"/"+R.length;X.hidden=!n;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
-R.forEach(function(r){r.addEventListener("click",function(){var i=r.dataset.id;if(S[i])delete S[i];else S[i]=1;U()})});
+function chips(r){return [].slice.call(r.querySelectorAll(".g"))}
+function keys(r){var c=chips(r);return c.length?c.map(function(g){return r.dataset.id+"|"+g.dataset.g}):[r.dataset.id]}
+function U(){var n=0,t=0;R.forEach(function(r){var k=keys(r),d=k.filter(function(i){return S[i]}).length;n+=d;t+=k.length;var all=d===k.length;r.classList.toggle("done",all);r.querySelector(".tick").setAttribute("aria-checked",all);chips(r).forEach(function(g){g.setAttribute("aria-pressed",!!S[r.dataset.id+"|"+g.dataset.g])})});C.textContent=n+"/"+t;X.hidden=!n;try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+R.forEach(function(r){r.addEventListener("click",function(e){var g=e.target.closest(".g");if(g){var i=r.dataset.id+"|"+g.dataset.g;if(S[i])delete S[i];else S[i]=1;return U()}
+if(!e.target.closest(".tick")&&chips(r).length)return;var k=keys(r),all=k.every(function(i){return S[i]});k.forEach(function(i){if(all)delete S[i];else S[i]=1});U()})});
 X.addEventListener("click",function(){S={};U()});document.querySelector(".refresh").addEventListener("click",function(){location.reload()});U()})();</script>'''
 
 if __name__ == "__main__":
-    open(sys.argv[3], "w").write(build(json.load(open(sys.argv[1])), load_rules(sys.argv[2])))
+    open(sys.argv[3], "w").write(build(json.load(open(sys.argv[1])), load_rules(sys.argv[2]), load_tasks(sys.argv[2]) or load_tasks("gear.csv")))
