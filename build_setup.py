@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 E = lambda s: html.escape(str(s).strip(), quote=True)
 ORDER = ["Worship Leader", "Vocals", "Keys", "Acoustic Guitar", "Electric Guitar", "Bass", "Drums", "Strings"]
 VOCAL = {"Worship Leader", "Vocals"}
-GUITARS = {"Acoustic Guitar", "Electric Guitar"}
+GUITARS = {"Acoustic Guitar", "Electric Guitar", "Bass"}
 WIRELESS = 6
 SPEAKERS = ["Preaching", "MC"]
 LABEL = {"Preaching": "Preacher", "MC": "Host"}
